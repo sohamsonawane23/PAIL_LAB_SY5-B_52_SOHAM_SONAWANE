@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binary Search Tree Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #2d3748;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-width: 7xl;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin: 2rem auto;
+        }
+        .node {
+            position: absolute;
+            width: 3rem;
+            height: 3rem;
+            background-color: #4299e1;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .node.highlight-search {
+            animation: pulse-green 1s infinite;
+        }
+        .node.highlight-found {
+            background-color: #48bb78;
+        }
+        .node.highlight-traversal {
+            background-color: #f59e0b;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .control-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .control-group input {
+            background-color: #4a5568;
+            border: 1px solid #718096;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            color: #e2e8f0;
+            width: 8rem;
+        }
+        .control-group button {
+            background-color: #4299e1;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .control-group button:hover {
+            background-color: #3182ce;
+        }
+        .traversal-buttons button {
+            background-color: #d69e2e;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .traversal-buttons button:hover {
+            background-color: #b7791f;
+        }
+        #tree-canvas-container {
+            position: relative;
+            width: 100%;
+            height: 65vh;
+            border: 2px dashed #4a5568;
+            border-radius: 1rem;
+            overflow: auto;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        #lines-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            z-index: 0;
+        }
+        .message-box {
+            background-color: #4a5568;
+            border: 1px solid #718096;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-size: 1rem;
+            min-height: 2rem;
+        }
+        @keyframes pulse-green {
+            0% {
+                box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(72, 187, 120, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(72, 187, 120, 0);
+            }
+        }
+        .message-box.success {
+            background-color: #48bb78;
+            border-color: #38a169;
+        }
+        .message-box.error {
+            background-color: #f56565;
+            border-color: #c53030;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100">
+
+    <div class="container my-8">
+        <h1 class="text-3xl font-bold text-center text-white">Binary Search Tree Simulator</h1>
+        <p class="text-center text-gray-400">Interact with the BST: Insert, Search, and Delete nodes with real-time visualization.</p>
+
+        <div id="tree-canvas-container" class="relative">
+            <canvas id="lines-canvas"></canvas>
+        </div>
+
+        <div class="flex flex-wrap gap-4 justify-center">
+            <div class="controls">
+                <div class="control-group">
+                    <input type="number" id="insert-value" placeholder="Enter value">
+                    <button onclick="insertNode()">Insert</button>
+                </div>
+                <div class="control-group">
+                    <input type="number" id="search-value" placeholder="Enter value">
+                    <button onclick="searchNode()">Search</button>
+                </div>
+                <div class="control-group">
+                    <input type="number" id="delete-value" placeholder="Enter value">
+                    <button onclick="deleteNode()">Delete</button>
+                </div>
+            </div>
+            <div class="flex flex-col items-center gap-4">
+                <button onclick="generateRandomTree()" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Generate Random Tree</button>
+                <div class="traversal-buttons flex gap-2">
+                    <button onclick="inorderTraversal()">Inorder</button>
+                    <button onclick="preorderTraversal()">Preorder</button>
+                    <button onclick="postorderTraversal()">Postorder</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="traversal-result" class="message-box mt-4">
+            Traversal Result: <span id="traversal-output">None</span>
+        </div>
+        <div id="message-box" class="message-box">
+            Ready for your commands!
+        </div>
+    </div>
+
+    <script>
+        class Node {
+            constructor(value) {
+                this.value = value;
+                this.left = null;
+                this.right = null;
+                this.x = 0;
+                this.y = 0;
+            }
+        }
+
+        let root = null;
+        let nodesArray = [];
+        const canvas = document.getElementById('lines-canvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('tree-canvas-container');
+        const nodeSize = 48;
+        const verticalSpacing = 80;
+        const animationSpeed = 500;
+        const messageBox = document.getElementById('message-box');
+        const traversalOutput = document.getElementById('traversal-output');
+        let currentAnimationTimeout = null;
+
+        function resizeCanvas() {
+            canvas.width = container.scrollWidth;
+            canvas.height = container.scrollHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        window.onload = function() {
+            resizeCanvas();
+            drawTree();
+        };
+
+        function showMessage(text, type = 'info') {
+            messageBox.textContent = text;
+            messageBox.className = 'message-box';
+            if (type === 'success') {
+                messageBox.classList.add('success');
+            } else if (type === 'error') {
+                messageBox.classList.add('error');
+            }
+        }
+
+        function clearHighlights() {
+            nodesArray.forEach(node => {
+                const nodeElement = document.getElementById(`node-${node.value}`);
+                if (nodeElement) {
+                    nodeElement.classList.remove('highlight-search', 'highlight-found', 'highlight-traversal');
+                }
+            });
+        }
+
+        function drawLines() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.strokeStyle = '#718096';
+            ctx.lineWidth = 2;
+            
+            function traverseAndDraw(node) {
+                if (!node) return;
+                const parentElement = document.getElementById(`node-${node.value}`);
+                if (parentElement) {
+                    if (node.left) {
+                        const childElement = document.getElementById(`node-${node.left.value}`);
+                        if (childElement) {
+                            const startX = parentElement.offsetLeft + parentElement.offsetWidth / 2;
+                            const startY = parentElement.offsetTop + parentElement.offsetHeight;
+                            const endX = childElement.offsetLeft + childElement.offsetWidth / 2;
+                            const endY = childElement.offsetTop;
+                            ctx.moveTo(startX, startY);
+                            ctx.lineTo(endX, endY);
+                        }
+                    }
+                    if (node.right) {
+                        const childElement = document.getElementById(`node-${node.right.value}`);
+                        if (childElement) {
+                            const startX = parentElement.offsetLeft + parentElement.offsetWidth / 2;
+                            const startY = parentElement.offsetTop + parentElement.offsetHeight;
+                            const endX = childElement.offsetLeft + childElement.offsetWidth / 2;
+                            const endY = childElement.offsetTop;
+                            ctx.moveTo(startX, startY);
+                            ctx.lineTo(endX, endY);
+                        }
+                    }
+                }
+                traverseAndDraw(node.left);
+                traverseAndDraw(node.right);
+            }
+
+            traverseAndDraw(root);
+            ctx.stroke();
+        }
+
+        function drawTree() {
+            container.querySelectorAll('.node').forEach(node => node.remove());
+            nodesArray = [];
+
+            if (!root) {
+                showMessage("Tree is empty. Insert a value to begin.");
+                traversalOutput.textContent = "None";
+                return;
+            }
+
+            function layout(node, x, y, level) {
+                if (!node) return;
+                
+                const offsetX = 50 * Math.pow(2, (4 - level));
+                node.x = x;
+                node.y = y;
+                nodesArray.push(node);
+
+                layout(node.left, x - offsetX, y + verticalSpacing, level + 1);
+                layout(node.right, x + offsetX, y + verticalSpacing, level + 1);
+            }
+            layout(root, canvas.width / 2, 40, 1);
+
+            nodesArray.forEach(node => {
+                const nodeElement = document.createElement('div');
+                nodeElement.id = `node-${node.value}`;
+                nodeElement.className = 'node';
+                nodeElement.textContent = node.value;
+                nodeElement.style.left = `${node.x - nodeSize / 2}px`;
+                nodeElement.style.top = `${node.y}px`;
+                container.appendChild(nodeElement);
+            });
+            
+            let maxX = 0;
+            let maxY = 0;
+            nodesArray.forEach(node => {
+                if (node.x > maxX) maxX = node.x;
+                if (node.y > maxY) maxY = node.y;
+            });
+
+            canvas.style.minWidth = `${maxX + nodeSize}px`;
+            canvas.style.minHeight = `${maxY + nodeSize + verticalSpacing}px`;
+            resizeCanvas();
+            drawLines();
+        }
+
+        // Helper function for insertion to be used by both manual and random generation
+        function insertValue(value) {
+            if (root === null) {
+                root = new Node(value);
+                return;
+            }
+
+            let currentNode = root;
+            let parent = null;
+
+            while (currentNode !== null) {
+                parent = currentNode;
+                if (value < currentNode.value) {
+                    currentNode = currentNode.left;
+                } else if (value > currentNode.value) {
+                    currentNode = currentNode.right;
+                } else {
+                    return; // Value already exists
+                }
+            }
+
+            if (value < parent.value) {
+                parent.left = new Node(value);
+            } else {
+                parent.right = new Node(value);
+            }
+        }
+
+        // --- BST Operations ---
+
+        function insertNode() {
+            const value = parseInt(document.getElementById('insert-value').value);
+            if (isNaN(value)) {
+                showMessage("Please enter a valid number.", 'error');
+                return;
+            }
+            clearHighlights();
+            insertValue(value);
+            drawTree();
+            showMessage(`Value ${value} inserted.`, 'success');
+        }
+
+        async function searchNode() {
+            const value = parseInt(document.getElementById('search-value').value);
+            if (isNaN(value)) {
+                showMessage("Please enter a valid number.", 'error');
+                return;
+            }
+
+            clearHighlights();
+            let currentNode = root;
+            let path = [];
+
+            while (currentNode !== null) {
+                path.push(currentNode);
+                if (value < currentNode.value) {
+                    currentNode = currentNode.left;
+                } else if (value > currentNode.value) {
+                    currentNode = currentNode.right;
+                } else {
+                    await animatePath(path, `Searching for value ${value}...`);
+                    document.getElementById(`node-${currentNode.value}`).classList.add('highlight-found');
+                    showMessage(`Value ${value} found in the tree.`, 'success');
+                    return;
+                }
+            }
+            await animatePath(path, `Searching for value ${value}...`);
+            showMessage(`Value ${value} was not found in the tree.`, 'error');
+        }
+
+        function deleteNode() {
+            const value = parseInt(document.getElementById('delete-value').value);
+            if (isNaN(value)) {
+                showMessage("Please enter a valid number.", 'error');
+                return;
+            }
+
+            clearHighlights();
+            const initialRoot = root;
+            root = deleteRecursive(root, value);
+            
+            if (root !== initialRoot) {
+                drawTree();
+                showMessage(`Value ${value} successfully deleted.`, 'success');
+            } else {
+                drawTree();
+            }
+        }
+
+        function deleteRecursive(node, value) {
+            if (node === null) {
+                showMessage(`Value ${value} not found. Cannot delete.`, 'error');
+                return node;
+            }
+
+            if (value < node.value) {
+                node.left = deleteRecursive(node.left, value);
+            } else if (value > node.value) {
+                node.right = deleteRecursive(node.right, value);
+            } else {
+                if (node.left === null) {
+                    return node.right;
+                } else if (node.right === null) {
+                    return node.left;
+                }
+                node.value = findMinValue(node.right);
+                node.right = deleteRecursive(node.right, node.value);
+            }
+            return node;
+        }
+
+        function findMinValue(node) {
+            let minValue = node.value;
+            while (node.left !== null) {
+                minValue = node.left.value;
+                node = node.left;
+            }
+            return minValue;
+        }
+
+        // --- Traversal Operations ---
+
+        function inorderTraversal() {
+            clearHighlights();
+            traversalOutput.textContent = "Traversing...";
+            const result = [];
+            const path = [];
+            function traverse(node) {
+                if (node) {
+                    traverse(node.left);
+                    result.push(node.value);
+                    path.push(node.value);
+                    traverse(node.right);
+                }
+            }
+            traverse(root);
+            animateTraversal(path, "Inorder Traversal");
+        }
+
+        function preorderTraversal() {
+            clearHighlights();
+            traversalOutput.textContent = "Traversing...";
+            const result = [];
+            const path = [];
+            function traverse(node) {
+                if (node) {
+                    result.push(node.value);
+                    path.push(node.value);
+                    traverse(node.left);
+                    traverse(node.right);
+                }
+            }
+            traverse(root);
+            animateTraversal(path, "Preorder Traversal");
+        }
+
+        function postorderTraversal() {
+            clearHighlights();
+            traversalOutput.textContent = "Traversing...";
+            const result = [];
+            const path = [];
+            function traverse(node) {
+                if (node) {
+                    traverse(node.left);
+                    traverse(node.right);
+                    result.push(node.value);
+                    path.push(node.value);
+                }
+            }
+            traverse(root);
+            animateTraversal(path, "Postorder Traversal");
+        }
+
+        // --- Utility Functions ---
+
+        async function animatePath(path, message) {
+            clearTimeout(currentAnimationTimeout);
+            return new Promise(resolve => {
+                let i = 0;
+                showMessage(message);
+
+                function step() {
+                    if (i > 0) {
+                        const prevNodeEl = document.getElementById(`node-${path[i-1].value}`);
+                        if(prevNodeEl) prevNodeEl.classList.remove('highlight-search');
+                    }
+                    if (i < path.length) {
+                        const currentNodeEl = document.getElementById(`node-${path[i].value}`);
+                        if(currentNodeEl) currentNodeEl.classList.add('highlight-search');
+                        i++;
+                        currentAnimationTimeout = setTimeout(step, animationSpeed);
+                    } else {
+                        resolve();
+                    }
+                }
+                step();
+            });
+        }
+
+        async function animateTraversal(path, message) {
+            clearTimeout(currentAnimationTimeout);
+            return new Promise(resolve => {
+                let i = 0;
+                showMessage(message);
+                traversalOutput.textContent = "";
+
+                function step() {
+                    if (i > 0) {
+                        const prevNodeEl = document.getElementById(`node-${path[i-1]}`);
+                        if(prevNodeEl) prevNodeEl.classList.remove('highlight-traversal');
+                    }
+                    if (i < path.length) {
+                        traversalOutput.textContent += (i > 0 ? ", " : "") + path[i];
+                        const currentNodeEl = document.getElementById(`node-${path[i]}`);
+                        if(currentNodeEl) currentNodeEl.classList.add('highlight-traversal');
+                        i++;
+                        currentAnimationTimeout = setTimeout(step, animationSpeed);
+                    } else {
+                        showMessage(`Traversal complete.`, 'success');
+                        resolve();
+                    }
+                }
+                step();
+            });
+        }
+
+        function generateRandomTree() {
+            clearHighlights();
+            clearTimeout(currentAnimationTimeout);
+            root = null;
+            const values = [];
+            const numNodes = Math.floor(Math.random() * 8) + 5; // 5 to 12 nodes
+
+            while (values.length < numNodes) {
+                const randomValue = Math.floor(Math.random() * 99) + 1;
+                if (!values.includes(randomValue)) {
+                    values.push(randomValue);
+                }
+            }
+
+            for (const value of values) {
+                insertValue(value);
+            }
+
+            drawTree();
+            showMessage(`Generated a new random tree with ${numNodes} nodes.`, 'info');
+        }
+    </script>
+</body>
+</html>
